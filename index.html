@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محاكاة دارة التحكم بالأشعة تحت الحمراء - الصف الثامن</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            max-width: 900px;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            color: var(--accent);
+            margin-bottom: 5px;
+            font-size: 1.8rem;
+        }
+
+        header p {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        @media (max-width: 950px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            border: 1px solid #334155;
+        }
+
+        .circuit-board {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            max-height: 520px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 3px solid var(--warning);
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .control-group {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
+
+        .control-group h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.05rem;
+            color: var(--accent);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-obstacle {
+            background: var(--warning);
+            color: #000;
+        }
+
+        .btn-obstacle.active {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .status-box {
+            padding: 12px;
+            border-radius: 8px;
+            background: #1e293b;
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        .badge-off { background: #475569; color: #fff; }
+        .badge-on { background: var(--success); color: #000; }
+
+        .component-info {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(56, 189, 248, 0.1);
+            border-right: 4px solid var(--accent);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            min-height: 75px;
+            width: 100%;
+        }
+
+        /* Animations */
+        @keyframes irPulse {
+            0% { stroke-dashoffset: 24; opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { stroke-dashoffset: 0; opacity: 0.4; }
+        }
+
+        .ir-beam {
+            stroke: #ef4444;
+            stroke-width: 3;
+            stroke-dasharray: 6 6;
+            animation: irPulse 0.8s linear infinite;
+        }
+
+        @keyframes spinMotor {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .motor-spinning {
+            transform-origin: 730px 65px;
+            animation: spinMotor 0.6s linear infinite;
+        }
+
+        .wire-active {
+            stroke: #ef4444 !important;
+            stroke-width: 3.5 !important;
+        }
+
+        .clickable-comp {
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .clickable-comp:hover {
+            opacity: 0.75;
+        }
+
+        /* قسم الأسئلة التفاعلية */
+        .quiz-section {
+            max-width: 1200px;
+            width: 100%;
+            margin-top: 25px;
+        }
+
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .quiz-header h2 {
+            margin: 0;
+            color: var(--accent);
+            font-size: 1.4rem;
+        }
+
+        .score-pill {
+            background: #0f172a;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .quiz-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 20px;
+        }
+
+        .question-card {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .question-title {
+            font-weight: bold;
+            font-size: 1rem;
+            margin-bottom: 14px;
+            color: #f1f5f9;
+            line-height: 1.5;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .option-btn {
+            background: #1e293b;
+            color: var(--text-main);
+            border: 1px solid #475569;
+            padding: 10px 14px;
+            border-radius: 8px;
+            text-align: right;
+            cursor: pointer;
+            font-size: 0.92rem;
+            transition: all 0.2s;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            background: #273549;
+        }
+
+        .option-btn:disabled {
+            cursor: default;
+        }
+
+        .option-btn.correct {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: var(--success);
+            color: #86efac;
+            font-weight: bold;
+        }
+
+        .option-btn.wrong {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--danger);
+            color: #fca5a5;
+        }
+
+        .feedback-text {
+            margin-top: 12px;
+            font-size: 0.88rem;
+            padding: 10px;
+            border-radius: 8px;
+            background: #1e293b;
+            color: #cbd5e1;
+            display: none;
+            line-height: 1.5;
+            border-right: 3px solid var(--accent);
+        }
+
+        .btn-reset-quiz {
+            background: var(--accent);
+            color: #0f172a;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.95rem;
+            margin-top: 20px;
+        }
+
+        .btn-reset-quiz:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>محاكاة دارة التحكم بالأشعة تحت الحمراء (IR)</h1>
+        <p>مبحث التكنولوجيا - الصف الثامن الأساسي | وحدة الاستشعار والتحكم عن بعد</p>
+    </header>
+
+    <div class="container">
+        <!-- منطقة الرسم التفاعلي للدارة -->
+        <div class="card circuit-board">
+            <svg viewBox="0 0 850 480" id="circuitSvg">
+                <rect x="5" y="5" width="840" height="470" fill="none" stroke="#ea580c" stroke-width="4" rx="8"/>
+
+                <!-- الأسلاك الرئيسية -->
+                <path id="wire12VTop" d="M 60 180 L 60 65 L 700 65" fill="none" stroke="#1e293b" stroke-width="2.5"/>
+                <path id="wire12VReg" d="M 60 130 L 130 130" fill="none" stroke="#1e293b" stroke-width="2.5"/>
+                
+                <!-- خط الأرضي السفلي GND -->
+                <path d="M 60 230 L 60 440 L 780 440 L 780 265" fill="none" stroke="#1e293b" stroke-width="2.5"/>
+                <line x1="190" y1="165" x2="190" y2="440" stroke="#1e293b" stroke-width="2.5"/>
+                <line x1="320" y1="365" x2="320" y2="440" stroke="#1e293b" stroke-width="2.5"/>
+                <line x1="470" y1="365" x2="470" y2="440" stroke="#1e293b" stroke-width="2.5"/>
+                <polyline points="665,345 680,360 680,440" fill="none" stroke="#1e293b" stroke-width="2.5"/>
+
+                <!-- خط 5V الخارج من 7805 -->
+                <polyline id="wire5VMain" points="250,130 320,130 320,150 610,150 610,185" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+                <line id="wire5VTx" x1="320" y1="150" x2="320" y2="210" stroke="#2563eb" stroke-width="2.5"/>
+                <line id="wire5VRx" x1="470" y1="150" x2="470" y2="175" stroke="#2563eb" stroke-width="2.5"/>
+
+                <!-- مصدر الجهد 12V -->
+                <g class="clickable-comp" onclick="showInfo('power')">
+                    <circle cx="60" cy="180" r="4" fill="#1e293b"/>
+                    <circle cx="60" cy="230" r="4" fill="#1e293b"/>
+                    <text x="72" y="185" font-size="18" font-weight="bold" fill="#dc2626">+</text>
+                    <text x="72" y="235" font-size="20" font-weight="bold" fill="#1e293b">-</text>
+                    <text x="15" y="210" font-size="14" font-weight="bold" fill="#0f172a">محول 12V</text>
+                </g>
+
+                <!-- منظم الجهد 7805 -->
+                <g class="clickable-comp" onclick="showInfo('reg7805')">
+                    <rect x="130" y="95" width="120" height="70" fill="#cbd5e1" stroke="#334155" stroke-width="2" rx="4"/>
+                    <text x="190" y="85" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">منظم فرق جهد</text>
+                    <text x="190" y="132" text-anchor="middle" font-size="16" font-weight="bold" fill="#0f172a">7805</text>
+                    <text x="136" y="125" font-size="12" fill="#334155">Vin</text>
+                    <text x="190" y="158" text-anchor="middle" font-size="12" fill="#334155">GND</text>
+                    <text x="218" y="125" font-size="12" fill="#334155">Vout</text>
+                    <text x="260" y="122" font-size="13" font-weight="bold" fill="#2563eb">5V</text>
+                </g>
+
+                <!-- مقاومة م1 220 أوم -->
+                <g class="clickable-comp" onclick="showInfo('r220')">
+                    <polyline points="320,210 312,218 328,228 312,238 328,248 312,258 320,265" fill="none" stroke="#1e293b" stroke-width="2.5"/>
+                    <line x1="320" y1="265" x2="320" y2="335" stroke="#2563eb" stroke-width="2.5"/>
+                    <text x="260" y="235" font-size="14" font-weight="bold" fill="#0f172a">م١</text>
+                    <text x="245" y="255" font-size="14" font-weight="bold" fill="#0f172a">220 Ω</text>
+                </g>
+
+                <!-- مرسل الأشعة تحت الحمراء IR TX -->
+                <g class="clickable-comp" onclick="showInfo('irtx')">
+                    <polygon points="305,335 335,335 320,360" fill="#ef4444" stroke="#1e293b" stroke-width="2"/>
+                    <line x1="305" y1="360" x2="335" y2="360" stroke="#1e293b" stroke-width="2.5"/>
+                    <text x="215" y="345" font-size="13" font-weight="bold" fill="#0f172a">مرسل أشعة</text>
+                    <text x="215" y="363" font-size="13" font-weight="bold" fill="#0f172a">تحت حمراء</text>
+                </g>
+
+                <!-- حزمة الأشعة تحت الحمراء + الحاجز -->
+                <g id="irBeamGroup">
+                    <line x1="345" y1="348" x2="450" y2="348" class="ir-beam"/>
+                    <line x1="345" y1="356" x2="450" y2="356" class="ir-beam"/>
+                </g>
+                <g id="obstacleBox" style="display: none;">
+                    <rect x="385" y="315" width="18" height="65" fill="#dc2626" rx="4"/>
+                    <text x="394" y="308" text-anchor="middle" font-size="12" font-weight="bold" fill="#dc2626">حاجز</text>
+                </g>
+
+                <!-- مقاومة م2 1K أوم -->
+                <g class="clickable-comp" onclick="showInfo('r1k')">
+                    <polyline points="470,175 462,182 478,190 462,198 478,206 462,214 470,220" fill="none" stroke="#1e293b" stroke-width="2.5"/>
+                    <line x1="470" y1="220" x2="470" y2="245" stroke="#1e293b" stroke-width="2.5"/>
+                    <text x="490" y="195" font-size="14" font-weight="bold" fill="#0f172a">م٢</text>
+                    <text x="490" y="213" font-size="14" font-weight="bold" fill="#0f172a">1KΩ</text>
+                </g>
+
+                <!-- المقاومة المتغيرة 100K -->
+                <g class="clickable-comp" onclick="showInfo('pot100k')">
+                    <polyline points="470,245 462,252 478,260 462,268 478,276 462,284 470,290" fill="none" stroke="#1e293b" stroke-width="2.5"/>
+                    <line x1="452" y1="285" x2="488" y2="250" stroke="#0284c7" stroke-width="2.5"/>
+                    <polygon points="488,250 480,252 486,258" fill="#0284c7"/>
+                    <text x="495" y="265" font-size="13" font-weight="bold" fill="#0f172a">مقاومة متغيرة</text>
+                    <text x="495" y="283" font-size="13" font-weight="bold" fill="#0284c7" id="potValueLabel">50 KΩ</text>
+                </g>
+
+                <!-- مستقبل الأشعة تحت الحمراء IR RX -->
+                <g class="clickable-comp" onclick="showInfo('irrx')">
+                    <line x1="470" y1="290" x2="470" y2="335" stroke="#1e293b" stroke-width="2.5"/>
+                    <polygon points="455,360 485,360 470,335" fill="#94a3b8" stroke="#1e293b" stroke-width="2" id="rxSymbol"/>
+                    <line x1="455" y1="335" x2="485" y2="335" stroke="#1e293b" stroke-width="2.5"/>
+                    <text x="495" y="345" font-size="13" font-weight="bold" fill="#0f172a">مستقبل أشعة</text>
+                    <text x="495" y="363" font-size="13" font-weight="bold" fill="#0f172a">تحت حمراء</text>
+                </g>
+
+                <!-- سلك قاعدة الترانزستور -->
+                <line id="wireBase" x1="470" y1="312" x2="650" y2="312" stroke="#1e293b" stroke-width="2.5"/>
+
+                <!-- الترانزستور BC548 -->
+                <g class="clickable-comp" onclick="showInfo('transistor')">
+                    <rect x="650" y="300" width="8" height="55" fill="#64748b" stroke="#1e293b" stroke-width="1.5"/>
+                    <line x1="658" y1="318" x2="680" y2="295" stroke="#1e293b" stroke-width="2.5"/>
+                    <line x1="658" y1="338" x2="680" y2="360" stroke="#1e293b" stroke-width="2.5"/>
+                    <polygon points="675,355 680,360 672,358" fill="#1e293b"/>
+                    <text x="692" y="332" font-size="14" font-weight="bold" fill="#0f172a">BC548</text>
+                </g>
+
+                <!-- سلك المجمع إلى ملف المرحل والثنائي -->
+                <polyline id="wireCollector" points="680,295 680,265 610,265 610,240" fill="none" stroke="#1e293b" stroke-width="2.5"/>
+                <polyline id="wireCoilBottom" points="680,265 715,265 715,245" fill="none" stroke="#1e293b" stroke-width="2.5"/>
+                <polyline id="wireCoilTop" points="610,185 715,185 715,205" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+
+                <!-- ثنائي الحماية 1N4007 -->
+                <g class="clickable-comp" onclick="showInfo('diode')">
+                    <polygon points="598,225 622,225 610,205" fill="#cbd5e1" stroke="#1e293b" stroke-width="2"/>
+                    <line x1="598" y1="205" x2="622" y2="205" stroke="#1e293b" stroke-width="2.5"/>
+                    <line x1="610" y1="225" x2="610" y2="240" stroke="#1e293b" stroke-width="2.5"/>
+                    <text x="550" y="212" font-size="13" font-weight="bold" fill="#0f172a">ثنائي</text>
+                    <text x="540" y="230" font-size="13" font-weight="bold" fill="#0f172a">1N4007</text>
+                </g>
+
+                <!-- المرحل Relay -->
+                <g class="clickable-comp" onclick="showInfo('relay')">
+                    <rect x="705" y="180" width="95" height="90" fill="#e2e8f0" stroke="#334155" stroke-width="2" rx="4"/>
+                    <path d="M 715 205 C 725 205, 725 215, 715 215 C 725 215, 725 225, 715 225 C 725 225, 725 235, 715 235 C 725 235, 725 245, 715 245" fill="none" stroke="#1e293b" stroke-width="2.5"/>
+                    <line x1="732" y1="195" x2="732" y2="255" stroke="#475569" stroke-width="2"/>
+                    
+                    <circle cx="755" cy="198" r="3.5" fill="#1e293b"/>
+                    <text x="742" y="173" font-size="12" font-weight="bold" fill="#0f172a">NC</text>
+                    
+                    <circle cx="780" cy="198" r="3.5" fill="#1e293b"/>
+                    <text x="775" y="173" font-size="12" font-weight="bold" fill="#0f172a">NO</text>
+
+                    <circle cx="780" cy="255" r="3.5" fill="#1e293b"/>
+                    <text x="772" y="285" font-size="12" font-weight="bold" fill="#0f172a">Com</text>
+
+                    <line id="relayArm" x1="780" y1="255" x2="756" y2="201" stroke="#dc2626" stroke-width="3"/>
+                </g>
+
+                <!-- سلك المحرك من NO -->
+                <polyline id="wireMotor" points="780,198 780,65 760,65" fill="none" stroke="#1e293b" stroke-width="2.5"/>
+
+                <!-- المحرك الكهربائي M -->
+                <g class="clickable-comp" onclick="showInfo('motor')">
+                    <circle cx="730" cy="65" r="28" fill="#ffffff" stroke="#1e293b" stroke-width="3"/>
+                    <g id="motorRotor">
+                        <text x="730" y="73" text-anchor="middle" font-size="22" font-weight="bold" fill="#0f172a">M</text>
+                    </g>
+                    <text x="688" y="88" font-size="16" font-weight="bold" fill="#dc2626">+</text>
+                    <text x="765" y="88" font-size="18" font-weight="bold" fill="#1e293b">-</text>
+                    <text x="730" y="110" text-anchor="middle" font-size="13" font-weight="bold" fill="#0f172a">محرك كهربائي</text>
+                </g>
+            </svg>
+
+            <div class="component-info" id="infoBox">
+                💡 <strong>تلميح تعليمي:</strong> اضغط على أي قطعة إلكترونية في المخطط لمعرفة وظيفتها في الدارة!
+            </div>
+        </div>
+
+        <!-- لوحة التحكم والحالة -->
+        <div class="card controls">
+            <div class="control-group">
+                <h3>1. محاكاة الاستشعار (مسار الأشعة)</h3>
+                <button id="toggleObstacleBtn" class="btn btn-obstacle" onclick="toggleObstacle()">
+                    ✋ وضع حاجز أمام الأشعة
+                </button>
+            </div>
+
+            <div class="control-group">
+                <h3>2. معايرة الحساسية (المقاومة المتغيرة)</h3>
+                <label for="potSlider">قيمة المقاومة المتغيرة: <strong id="potSliderVal">50</strong> KΩ</label>
+                <input type="range" id="potSlider" min="5" max="100" value="50" oninput="updateSimulation()">
+                <small style="color: var(--text-muted); display: block; margin-top: 5px;">
+                    تتحكم المقاومة المتغيرة بجهد القاعدة اللازم لتشغيل الترانزستور BC548.
+                </small>
+            </div>
+
+            <div class="control-group">
+                <h3>3. قراءات وحالة الدارة المباشرة</h3>
+                <div class="status-box">
+                    <div>حالة الأشعة: <span id="statusBeam" class="badge badge-on">تصل للمستقبل</span></div>
+                    <div style="margin-top: 6px;">الترانزستور BC548: <span id="statusTransistor" class="badge badge-off">حالة قطع (OFF)</span></div>
+                    <div style="margin-top: 6px;">مفتاح المرحل (Relay): <span id="statusRelay" class="badge badge-off">مغلق طبيعياً (NC)</span></div>
+                    <div style="margin-top: 6px;">المحرك الكهربائي: <span id="statusMotor" class="badge badge-off">متوقف</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- قسم التقويم الذاتي والأسئلة التفاعلية -->
+    <section class="card quiz-section">
+        <div class="quiz-header">
+            <h2>📝 اختبر فهمك لمكونات وآلية عمل الدارة</h2>
+            <div class="score-pill">النتيجة: <span id="quizScore">0</span> / <span id="quizTotal">6</span></div>
+        </div>
+
+        <div class="quiz-grid" id="quizContainer"></div>
+
+        <button class="btn-reset-quiz" onclick="renderQuiz()">🔄 إعادة الاختبار من جديد</button>
+    </section>
+
+    <script>
+        let hasObstacle = false;
+
+        const componentDescriptions = {
+            power: "<strong>محول تيار ثابت (12V):</strong> يزود الدارة بالجهد الكهربائي اللازم لتشغيل المحرك الكهربائي، ويغذي منظم الجهد 7805.",
+            reg7805: "<strong>منظم فرق الجهد (7805):</strong> يخفض الجهد الداخل من 12V إلى 5V ثابتة لحماية مرسل ومستقبل الأشعة تحت الحمراء وملف المرحل من التلف.",
+            r220: "<strong>مقاومة ثابتة (220Ω):</strong> تحد من شدة التيار المار في مرسل الأشعة تحت الحمراء لحمايته من الاحتراق.",
+            irtx: "<strong>مرسل الأشعة تحت الحمراء (IR LED):</strong> ثنائي باعث يرسل أشعة تحت حمراء غير مرئية للعين المجردة باستمرار عند وصله بالتيار.",
+            r1k: "<strong>مقاومة حماية (1KΩ):</strong> تحمي قاعدة الترانزستور من التيار الزائد عندما تكون المقاومة المتغيرة عند الصفر.",
+            pot100k: "<strong>مقاومة متغيرة (100KΩ):</strong> تستخدم لمعايرة حساسية الدارة وتحديد الجهد الواصل إلى قاعدة الترانزستور BC548.",
+            irrx: "<strong>مستقبل الأشعة تحت الحمراء (Photodiode):</strong> موصول انحيازاً عكسياً؛ تقل مقاومته عند سقوط الأشعة عليه وتزداد عند حجبها.",
+            transistor: "<strong>الترانزستور (BC548):</strong> يعمل كمفتاح إلكتروني؛ عند وصول جهد كافٍ لقاعدته (0.7V فأكثر) يمرر التيار لتشغيل ملف المرحل.",
+            diode: "<strong>ثنائي الحماية (1N4007):</strong> موصول عكسياً على التوازي مع ملف المرحل لحماية الترانزستور من التيار العكسي الناتج عن الحث الذاتي للملف عند فصله.",
+            relay: "<strong>المرحل (Relay):</strong> مفتاح كهرومغناطيسي يفصل بين دارة التحكم (5V) ودارة الحمل (12V). ينتقل من NC إلى NO عند مغنطة ملفه.",
+            motor: "<strong>المحرك الكهربائي (M):</strong> الحمل الكهربائي الذي يعمل بجهد 12V عند اكتمال دارته عبر نقطة التلامس NO في المرحل."
+        };
+
+        function showInfo(key) {
+            document.getElementById('infoBox').innerHTML = componentDescriptions[key];
+        }
+
+        function toggleObstacle() {
+            hasObstacle = !hasObstacle;
+            const btn = document.getElementById('toggleObstacleBtn');
+            const obstacleBox = document.getElementById('obstacleBox');
+            const irBeamGroup = document.getElementById('irBeamGroup');
+
+            if (hasObstacle) {
+                btn.textContent = "✅ إزالة الحاجز عن الأشعة";
+                btn.classList.add('active');
+                obstacleBox.style.display = "block";
+                irBeamGroup.style.display = "none";
+            } else {
+                btn.textContent = "✋ وضع حاجز أمام الأشعة";
+                btn.classList.remove('active');
+                obstacleBox.style.display = "none";
+                irBeamGroup.style.display = "block";
+            }
+            updateSimulation();
+        }
+
+        function updateSimulation() {
+            const potVal = parseInt(document.getElementById('potSlider').value);
+            document.getElementById('potSliderVal').textContent = potVal;
+            document.getElementById('potValueLabel').textContent = potVal + " KΩ";
+
+            let transistorOn = false;
+            if (hasObstacle && potVal <= 85) {
+                transistorOn = true;
+            } else if (!hasObstacle && potVal < 15) {
+                transistorOn = true;
+            }
+
+            const statusBeam = document.getElementById('statusBeam');
+            const statusTransistor = document.getElementById('statusTransistor');
+            const statusRelay = document.getElementById('statusRelay');
+            const statusMotor = document.getElementById('statusMotor');
+
+            const relayArm = document.getElementById('relayArm');
+            const motorRotor = document.getElementById('motorRotor');
+            const wireBase = document.getElementById('wireBase');
+            const wireCollector = document.getElementById('wireCollector');
+            const wireMotor = document.getElementById('wireMotor');
+            const wire12VTop = document.getElementById('wire12VTop');
+            const rxSymbol = document.getElementById('rxSymbol');
+
+            if (hasObstacle) {
+                statusBeam.textContent = "محجوبة (يوجد حاجز)";
+                statusBeam.className = "badge badge-off";
+                rxSymbol.setAttribute("fill", "#475569");
+            } else {
+                statusBeam.textContent = "تصل للمستقبل";
+                statusBeam.className = "badge badge-on";
+                rxSymbol.setAttribute("fill", "#38bdf8");
+            }
+
+            if (transistorOn) {
+                statusTransistor.textContent = "حالة إشباع (ON)";
+                statusTransistor.className = "badge badge-on";
+
+                statusRelay.textContent = "مفتوح طبيعياً (NO)";
+                statusRelay.className = "badge badge-on";
+
+                statusMotor.textContent = "يدور (12V)";
+                statusMotor.className = "badge badge-on";
+
+                relayArm.setAttribute("x2", "780");
+                relayArm.setAttribute("y2", "201");
+
+                motorRotor.classList.add("motor-spinning");
+                wireBase.classList.add("wire-active");
+                wireCollector.classList.add("wire-active");
+                wireMotor.classList.add("wire-active");
+                wire12VTop.classList.add("wire-active");
+            } else {
+                statusTransistor.textContent = "حالة قطع (OFF)";
+                statusTransistor.className = "badge badge-off";
+
+                statusRelay.textContent = "مغلق طبيعياً (NC)";
+                statusRelay.className = "badge badge-off";
+
+                statusMotor.textContent = "متوقف";
+                statusMotor.className = "badge badge-off";
+
+                relayArm.setAttribute("x2", "756");
+                relayArm.setAttribute("y2", "201");
+
+                motorRotor.classList.remove("motor-spinning");
+                wireBase.classList.remove("wire-active");
+                wireCollector.classList.remove("wire-active");
+                wireMotor.classList.remove("wire-active");
+                wire12VTop.classList.remove("wire-active");
+            }
+        }
+
+        // بيانات الأسئلة التفاعلية
+        const quizQuestions = [
+            {
+                q: "1. ما وظيفة منظم فرق الجهد (7805) في هذه الدارة؟",
+                options: [
+                    "رفع الجهد من 5V إلى 12V لتشغيل المحرك",
+                    "تثبيت الجهد الخارج عند 5V لحماية قطع التحكم والأشعة",
+                    "تحويل التيار المتردد إلى تيار مستمر"
+                ],
+                answer: 1,
+                explanation: "يدخل لمنظم الجهد 7805 جهد 12V من المحول ويخرجه 5V ثابتة مناسبة لمرسل ومستقبل الأشعة وملف المرحل."
+            },
+            {
+                q: "2. لماذا تم توصيل المقاومة (م١ = 220Ω) على التوالي مع مرسل الأشعة تحت الحمراء؟",
+                options: [
+                    "للحد من شدة التيار وحماية المرسل من التلف",
+                    "لزيادة مدى إرسال الأشعة تحت الحمراء",
+                    "لمعايرة حساسية مستقبل الأشعة"
+                ],
+                answer: 0,
+                explanation: "الثنائي الباعث للأشعة تحت الحمراء لا يتحمل جهد 5V مباشرة، لذا تعمل المقاومة 220Ω على تقليل التيار وحمايته."
+            },
+            {
+                q: "3. ماذا يحدث عند وضع حاجز يمنع وصول الأشعة تحت الحمراء إلى المستقبل؟",
+                options: [
+                    "تقل مقاومة المستقبل ويتوقف المحرك",
+                    "تزداد مقاومة المستقبل فيمر تيار لقاعدة الترانزستور ويدور المحرك",
+                    "يحترق الثنائي 1N4007"
+                ],
+                answer: 1,
+                explanation: "عند حجب الأشعة ترتفع مقاومة المستقبل العكسية، فينتقل التيار نحو قاعدة الترانزستور BC548 فيعمل ويشغل المرحل والمحرك."
+            },
+            {
+                q: "4. ما الغرض من وجود الثنائي (1N4007) الموصول على التوازي مع ملف المرحل؟",
+                options: [
+                    "إضاءة الدارة عند عمل المحرك",
+                    "حماية الترانزستور من التيار العكسي الناتج عن ملف المرحل",
+                    "تخفيض جهد المحرك الكهربائي"
+                ],
+                answer: 1,
+                explanation: "عند فصل التيار عن ملف المرحل يتولد تيار حثي عكسي عالٍ، ويقوم ثنائي الحماية بتفريغه لحماية الترانزستور BC548."
+            },
+            {
+                q: "5. أي طرفين يتصلان معاً في المرحل (Relay) لكي يعمل المحرك الكهربائي؟",
+                options: [
+                    "الطرف المشترك (Com) مع المغلق طبيعياً (NC)",
+                    "الطرف المشترك (Com) مع المفتوح طبيعياً (NO)",
+                    "الطرف (NC) مع الطرف (NO) مباشرة"
+                ],
+                answer: 1,
+                explanation: "المحرك موصول مع نقطة التلامس المفتوحة طبيعياً (NO)، وعند مغنطة ملف المرحل ينجذب المفتاح من NC إلى NO فتكتمل دارة 12V."
+            },
+            {
+                q: "6. ما وظيفة المقاومة المتغيرة (100KΩ) في مسار مستقبل الأشعة؟",
+                options: [
+                    "التحكم في سرعة دوران المحرك الكهربائي",
+                    "معايرة حساسية الدارة وتحديد الجهد الواصل لقاعدة الترانزستور",
+                    "تغيير لون الأشعة تحت الحمراء"
+                ],
+                answer: 1,
+                explanation: "تعمل المقاومة المتغيرة كمجزئ جهد لضبط مستوى الحساسية المناسب لتشغيل الترانزستور بدقة."
+            }
+        ];
+
+        let currentScore = 0;
+
+        function renderQuiz() {
+            currentScore = 0;
+            document.getElementById('quizScore').textContent = currentScore;
+            document.getElementById('quizTotal').textContent = quizQuestions.length;
+
+            const container = document.getElementById('quizContainer');
+            container.innerHTML = "";
+
+            quizQuestions.forEach((item, qIndex) => {
+                const card = document.createElement('div');
+                card.className = 'question-card';
+
+                let optionsHTML = '';
+                item.options.forEach((opt, optIndex) => {
+                    optionsHTML += `<button class="option-btn" onclick="checkAnswer(${qIndex}, ${optIndex}, this)">${opt}</button>`;
+                });
+
+                card.innerHTML = `
+                    <div>
+                        <div class="question-title">${item.q}</div>
+                        <div class="options-list" id="opts-${qIndex}">
+                            ${optionsHTML}
+                        </div>
+                    </div>
+                    <div class="feedback-text" id="fb-${qIndex}">${item.explanation}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function checkAnswer(qIndex, selectedIndex, btnElement) {
+            const questionObj = quizQuestions[qIndex];
+            const optionsContainer = document.getElementById(`opts-${qIndex}`);
+            const buttons = optionsContainer.querySelectorAll('.option-btn');
+            const feedback = document.getElementById(`fb-${qIndex}`);
+
+            // تعطيل جميع أزرار هذا السؤال بعد الإجابة
+            buttons.forEach((btn, idx) => {
+                btn.disabled = true;
+                if (idx === questionObj.answer) {
+                    btn.classList.add('correct');
+                }
+            });
+
+            if (selectedIndex === questionObj.answer) {
+                currentScore++;
+                document.getElementById('quizScore').textContent = currentScore;
+            } else {
+                btnElement.classList.add('wrong');
+            }
+
+            feedback.style.display = 'block';
+        }
+
+        // تشغيل الحالة الابتدائية والأسئلة
+        updateSimulation();
+        renderQuiz();
+    </script>
+</body>
+</html>
